@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Everything Claude Code (ECC) — Agent Harness for Claude Code, Codex, Cursor &amp; More</title>
+<meta name="description" content="ECC is an agent orchestration framework with 68 subagents, 292 workflow skills, and a security scanner, running across Claude Code, Codex, Cursor, OpenCode, Kimi, Gemini and more.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+<style>
+  :root{
+    --bg-deep: #090D16;
+    --bg-surface: #0F172A;
+    --bg-surface-2: #131B2E;
+    --line: rgba(255,255,255,0.08);
+    --line-strong: rgba(255,255,255,0.14);
+    --text-hi: #EDEFF7;
+    --text-mid: #A8AFC4;
+    --text-low: #6B7590;
+    --purple: #8B5CF6;
+    --purple-soft: rgba(139,92,246,0.14);
+    --cyan: #06B6D4;
+    --cyan-soft: rgba(6,182,212,0.14);
+    --emerald: #10B981;
+    --emerald-soft: rgba(16,185,129,0.14);
+  }
+
+  *{ box-sizing: border-box; }
+
+  html{ scroll-behavior: smooth; }
+
+  body{
+    background: var(--bg-deep);
+    color: var(--text-hi);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  .font-display{ font-family: 'Space Grotesk', sans-serif; }
+  .font-mono{ font-family: 'JetBrains Mono', monospace; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+  }
+
+  ::selection{ background: var(--purple); color: white; }
+
+  a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  .bg-grid{
+    background-image:
+      linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 90%);
+  }
+
+  .glow-purple{
+    background: radial-gradient(closest-side, rgba(139,92,246,0.35), transparent);
+    filter: blur(60px);
+  }
+  .glow-cyan{
+    background: radial-gradient(closest-side, rgba(6,182,212,0.28), transparent);
+    filter: blur(60px);
+  }
+
+  .glass{
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
+    border: 1px solid var(--line);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .glass-strong{
+    background: linear-gradient(180deg, rgba(19,27,46,0.9), rgba(15,23,42,0.85));
+    border: 1px solid var(--line-strong);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .nav-link{
+    color: var(--text-mid);
+    transition: color 0.15s ease;
+    position: relative;
+  }
+  .nav-link:hover{ color: var(--text-hi); }
+
+  .btn-primary{
+    background: linear-gradient(135deg, var(--purple), #7C3AED);
+    color: white;
+    box-shadow: 0 8px 24px -8px rgba(139,92,246,0.6);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn-primary:hover{ transform: translateY(-1px); box-shadow: 0 10px 30px -8px rgba(139,92,246,0.75); }
+
+  .btn-ghost{
+    border: 1px solid var(--line-strong);
+    color: var(--text-hi);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .btn-ghost:hover{ border-color: rgba(6,182,212,0.5); background: rgba(6,182,212,0.06); }
+
+  .term-window{
+    background: #0B0F1A;
+    border: 1px solid var(--line-strong);
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.7);
+  }
+  .term-dot{ width: 11px; height: 11px; border-radius: 999px; }
+
+  .copy-btn{
+    color: var(--text-mid);
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  .copy-btn:hover{ color: var(--text-hi); background: rgba(255,255,255,0.06); }
+
+  /* Loop visualizer */
+  .loop-track{
+    position: relative;
+  }
+  .loop-line{
+    position: absolute;
+    top: 27px;
+    left: 27px;
+    right: 27px;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(139,92,246,0.5), rgba(6,182,212,0.5));
+    z-index: 0;
+  }
+  .loop-node{
+    width: 56px;
+    height: 56px;
+    border-radius: 999px;
+    background: var(--bg-surface);
+    border: 1px solid var(--line-strong);
+    color: var(--text-mid);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    z-index: 1;
+    position: relative;
+  }
+  .loop-node.active{
+    border-color: var(--purple);
+    color: white;
+    background: linear-gradient(135deg, rgba(139,92,246,0.25), rgba(6,182,212,0.15));
+    box-shadow: 0 0 0 4px rgba(139,92,246,0.15), 0 8px 24px -6px rgba(139,92,246,0.5);
+  }
+  .loop-label{ color: var(--text-mid); }
+  .loop-label.active{ color: var(--text-hi); }
+
+  .tag-pill{
+    background: var(--bg-surface-2);
+    border: 1px solid var(--line);
+    color: var(--text-mid);
+    transition: all 0.15s ease;
+  }
+  .tag-pill.hidden-item{ display: none; }
+
+  .install-tab{
+    color: var(--text-low);
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .install-tab.active-tab{
+    color: var(--text-hi);
+    border-color: var(--cyan);
+  }
+
+  .matrix-row:hover{ background: rgba(255,255,255,0.02); }
+
+  .status-dot{ width: 8px; height: 8px; border-radius: 999px; display: inline-block; }
+
+  .num-mark{
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-low);
+    font-size: 0.8rem;
+  }
+
+  .card-hover{ transition: transform 0.2s ease, border-color 0.2s ease; }
+  .card-hover:hover{ transform: translateY(-3px); border-color: rgba(139,92,246,0.35); }
+
+  ::-webkit-scrollbar{ width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track{ background: var(--bg-deep); }
+  ::-webkit-scrollbar-thumb{ background: #232C42; border-radius: 999px; }
+
+  .toast{
+    transform: translateY(140%);
+    transition: transform 0.25s ease;
+  }
+  .toast.show{ transform: translateY(0); }
+
+  .divider{
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--line-strong), transparent);
+  }
+</style>
+</head>
+<body class="antialiased">
+
+<!-- ================= NAV ================= -->
+<header class="fixed top-0 left-0 right-0 z-50">
+  <div class="glass-strong">
+    <div class="max-w-6xl mx-auto px-6 py-3.5 flex items-center justify-between">
+      <a href="#top" class="flex items-center gap-2.5">
+        <svg width="30" height="30" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="logoGrad" x1="4" y1="4" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#8B5CF6"/>
+              <stop offset="1" stop-color="#06B6D4"/>
+            </linearGradient>
+          </defs>
+          <path d="M20 3L34.6 11.5V28.5L20 37L5.4 28.5V11.5L20 3Z" stroke="url(#logoGrad)" stroke-width="1.4" opacity="0.5"/>
+          <circle cx="20" cy="3" r="2.4" fill="url(#logoGrad)"/>
+          <circle cx="34.6" cy="11.5" r="2.4" fill="url(#logoGrad)"/>
+          <circle cx="34.6" cy="28.5" r="2.4" fill="url(#logoGrad)"/>
+          <circle cx="20" cy="37" r="2.4" fill="url(#logoGrad)"/>
+          <circle cx="5.4" cy="28.5" r="2.4" fill="url(#logoGrad)"/>
+          <circle cx="5.4" cy="11.5" r="2.4" fill="url(#logoGrad)"/>
+          <circle cx="20" cy="20" r="3.2" fill="url(#logoGrad)"/>
+          <path d="M20 20L20 3M20 20L34.6 11.5M20 20L34.6 28.5M20 20L20 37M20 20L5.4 28.5M20 20L5.4 11.5" stroke="url(#logoGrad)" stroke-width="1" opacity="0.7"/>
+        </svg>
+        <div class="flex items-center gap-2">
+          <span class="font-display font-semibold text-[15px] tracking-tight">Everything Claude Code</span>
+          <span class="font-mono text-[10.5px] px-1.5 py-0.5 rounded border border-white/10 text-[var(--text-mid)]">v2.2.1</span>
+        </div>
+      </a>
+
+      <nav class="hidden md:flex items-center gap-7 text-[13.5px]">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#explorer" class="nav-link">Agent explorer</a>
+        <a href="#install" class="nav-link">Installation</a>
+        <a href="#matrix" class="nav-link">Harness matrix</a>
+        <a href="https://discord.gg/36yGMHGFbR" class="nav-link">Community</a>
+      </nav>
+
+      <a href="https://github.com/affaan-m/ECC" class="btn-ghost flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[13px]">
+        <i data-lucide="github" class="w-4 h-4"></i>
+        <span>affaan-m/ECC</span>
+        <span class="flex items-center gap-1 text-[var(--text-mid)] border-l border-white/10 pl-2 ml-0.5">
+          <i data-lucide="star" class="w-3.5 h-3.5 text-[var(--purple)]"></i>
+          <span id="star-count" class="font-mono text-[12px]">—</span>
+        </span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main id="top" class="relative">
+
+  <!-- ================= HERO ================= -->
+  <section class="relative pt-40 pb-28 px-6">
+    <div class="absolute inset-0 bg-grid pointer-events-none"></div>
+    <div class="absolute -top-20 left-1/4 w-[500px] h-[500px] glow-purple pointer-events-none"></div>
+    <div class="absolute top-40 right-1/4 w-[420px] h-[420px] glow-cyan pointer-events-none"></div>
+
+    <div class="relative max-w-5xl mx-auto">
+      <div class="flex justify-center mb-7">
+        <a href="#install" class="glass inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[12.5px] text-[var(--text-mid)] hover:text-[var(--text-hi)] transition-colors">
+          <span class="status-dot" style="background: var(--emerald); box-shadow: 0 0 8px var(--emerald);"></span>
+          ECC 2.2.1 is out — one command sets up every harness
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+        </a>
+      </div>
+
+      <h1 class="font-display text-center text-[2.6rem] leading-[1.08] sm:text-6xl sm:leading-[1.06] font-semibold tracking-tight max-w-4xl mx-auto">
+        Turn AI chatbots into disciplined engineering systems
+      </h1>
+
+      <p class="text-center text-[var(--text-mid)] text-lg leading-relaxed max-w-2xl mx-auto mt-6">
+        Plan before you build. Verify every change with tests. Review code from a fresh context. Carry session memory across eleven-plus agent harnesses, from Claude Code to Cursor to Gemini CLI.
+      </p>
+
+      <div class="flex flex-col items-center gap-5 mt-10">
+        <div class="term-window rounded-xl w-full max-w-lg overflow-hidden">
+          <div class="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.06]">
+            <span class="term-dot" style="background:#FF5F57"></span>
+            <span class="term-dot" style="background:#FEBC2E"></span>
+            <span class="term-dot" style="background:#28C840"></span>
+            <span class="font-mono text-[11px] text-[var(--text-low)] ml-2">zsh — ecc-setup</span>
+          </div>
+          <div class="px-4 py-4 flex items-center justify-between gap-3">
+            <code id="hero-cmd" class="font-mono text-[13.5px] sm:text-[14.5px] text-[var(--text-hi)]"><span style="color:var(--emerald)">$</span> npx ecc-universal@2.2.1 setup</code>
+            <button onclick="copyCmd('npx ecc-universal@2.2.1 setup', this)" class="copy-btn shrink-0 p-2 rounded-md" aria-label="Copy install command">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-3">
+          <a href="https://ecc.tools" class="btn-primary px-5 py-2.5 rounded-lg text-[14px] font-medium">Visit ecc.tools</a>
+          <a href="https://discord.gg/36yGMHGFbR" class="btn-ghost flex items-center gap-2 px-5 py-2.5 rounded-lg text-[14px] font-medium">
+            <i data-lucide="message-circle" class="w-4 h-4"></i> Join the Discord
+          </a>
+        </div>
+      </div>
+
+      <!-- stat strip -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-px mt-16 rounded-xl overflow-hidden border border-white/[0.07]">
+        <div class="bg-[var(--bg-surface)] px-5 py-5 text-center">
+          <div class="font-display text-2xl font-semibold">68</div>
+          <div class="text-[12.5px] text-[var(--text-low)] mt-1">Specialized subagents</div>
+        </div>
+        <div class="bg-[var(--bg-surface)] px-5 py-5 text-center">
+          <div class="font-display text-2xl font-semibold">292</div>
+          <div class="text-[12.5px] text-[var(--text-low)] mt-1">Reusable workflow skills</div>
+        </div>
+        <div class="bg-[var(--bg-surface)] px-5 py-5 text-center">
+          <div class="font-display text-2xl font-semibold">94</div>
+          <div class="text-[12.5px] text-[var(--text-low)] mt-1">Slash commands &amp; shims</div>
+        </div>
+        <div class="bg-[var(--bg-surface)] px-5 py-5 text-center">
+          <div class="font-display text-2xl font-semibold">14</div>
+          <div class="text-[12.5px] text-[var(--text-low)] mt-1">MCP configurations</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="max-w-6xl mx-auto px-6"><div class="divider"></div></div>
+
+  <!-- ================= LOOP VISUALIZER ================= -->
+  <section class="py-24 px-6">
+    <div class="max-w-5xl mx-auto">
+      <div class="max-w-xl mb-14">
+        <h2 class="font-display text-3xl font-semibold tracking-tight">The engineering loop, not a chat window</h2>
+        <p class="text-[var(--text-mid)] mt-3 leading-relaxed">Every task moves through the same seven stages. Select one to see which subagents and skills carry it.</p>
+      </div>
+
+      <div class="loop-track flex justify-between mb-9 px-2" id="loop-track">
+        <div class="loop-line"></div>
+      </div>
+
+      <div class="glass rounded-2xl p-6 min-h-[110px] flex flex-col justify-center" id="loop-detail">
+        <!-- populated by JS -->
+      </div>
+    </div>
+  </section>
+
+  <div class="max-w-6xl mx-auto px-6"><div class="divider"></div></div>
+
+  <!-- ================= FEATURES ================= -->
+  <section id="features" class="py-24 px-6">
+    <div class="max-w-5xl mx-auto">
+      <div class="max-w-xl mb-14">
+        <h2 class="font-display text-3xl font-semibold tracking-tight">Built for the parts chat interfaces skip</h2>
+        <p class="text-[var(--text-mid)] mt-3 leading-relaxed">Memory that survives a session, a scanner that reads code like an attacker, and a context budget that doesn't quietly run out.</p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-5">
+        <div class="glass card-hover rounded-2xl p-6">
+          <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-5" style="background: var(--purple-soft);">
+            <i data-lucide="database" class="w-5 h-5" style="color: var(--purple)"></i>
+          </div>
+          <h3 class="font-display text-lg font-medium mb-2">Unified memory vault</h3>
+          <p class="text-[var(--text-mid)] text-[14.5px] leading-relaxed mb-4">Decisions, conventions, and open threads persist between sessions and travel with you if you switch harnesses.</p>
+          <code class="font-mono text-[12.5px] px-2.5 py-1 rounded-md" style="background: var(--bg-surface-2); color: var(--purple);">ecc memory</code>
+        </div>
+
+        <div class="glass card-hover rounded-2xl p-6">
+          <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-5" style="background: var(--emerald-soft);">
+            <i data-lucide="shield-check" class="w-5 h-5" style="color: var(--emerald)"></i>
+          </div>
+          <h3 class="font-display text-lg font-medium mb-2">AgentShield auditor</h3>
+          <p class="text-[var(--text-mid)] text-[14.5px] leading-relaxed mb-4">102 static rules cover the OWASP Top 10, backed by an Opus 4.6 red-team pass on anything the rules flag as ambiguous.</p>
+          <code class="font-mono text-[12.5px] px-2.5 py-1 rounded-md" style="background: var(--bg-surface-2); color: var(--emerald);">ecc-agentshield scan --path .</code>
+        </div>
+
+        <div class="glass card-hover rounded-2xl p-6">
+          <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-5" style="background: var(--cyan-soft);">
+            <i data-lucide="git-branch" class="w-5 h-5" style="color: var(--cyan)"></i>
+          </div>
+          <h3 class="font-display text-lg font-medium mb-2">Context window budgeting</h3>
+          <p class="text-[var(--text-mid)] text-[14.5px] leading-relaxed mb-4">Strategic compaction keeps long-running tasks inside their token budget instead of degrading near the limit.</p>
+          <code class="font-mono text-[12.5px] px-2.5 py-1 rounded-md" style="background: var(--bg-surface-2); color: var(--cyan);">ecc context --budget</code>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="max-w-6xl mx-auto px-6"><div class="divider"></div></div>
+
+  <!-- ================= EXPLORER ================= -->
+  <section id="explorer" class="py-24 px-6">
+    <div class="max-w-5xl mx-auto">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-9">
+        <div class="max-w-xl">
+          <h2 class="font-display text-3xl font-semibold tracking-tight">Find the piece you need</h2>
+          <p class="text-[var(--text-mid)] mt-3 leading-relaxed">Subagents, skills, and commands are searchable by what they actually do.</p>
+        </div>
+        <div class="relative w-full md:w-72">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-low)]"></i>
+          <input id="component-search" type="text" placeholder="Try “security” or “test”"
+            class="w-full bg-[var(--bg-surface)] border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-[13.5px] placeholder:text-[var(--text-low)] focus:border-[var(--cyan)]/50 transition-colors">
+        </div>
+      </div>
+
+      <div id="component-grid" class="flex flex-wrap gap-2.5"></div>
+      <p id="no-results" class="text-[var(--text-low)] text-sm mt-4 hidden">Nothing matches that search.</p>
+    </div>
+  </section>
+
+  <div class="max-w-6xl mx-auto px-6"><div class="divider"></div></div>
+
+  <!-- ================= HARNESS MATRIX ================= -->
+  <section id="matrix" class="py-24 px-6">
+    <div class="max-w-5xl mx-auto">
+      <div class="max-w-xl mb-10">
+        <h2 class="font-display text-3xl font-semibold tracking-tight">One setup, eleven harnesses</h2>
+        <p class="text-[var(--text-mid)] mt-3 leading-relaxed">Support depth varies by harness. Claude Code gets first-class treatment; others follow as adapters mature.</p>
+      </div>
+
+      <div class="glass rounded-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-[14px]">
+            <thead>
+              <tr class="border-b border-white/10 text-[var(--text-low)] text-[12.5px]">
+                <th class="px-5 py-3.5 font-medium">Harness</th>
+                <th class="px-5 py-3.5 font-medium">Support tier</th>
+                <th class="px-5 py-3.5 font-medium hidden sm:table-cell">Notes</th>
+              </tr>
+            </thead>
+            <tbody id="matrix-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="max-w-6xl mx-auto px-6"><div class="divider"></div></div>
+
+  <!-- ================= INSTALL ================= -->
+  <section id="install" class="py-24 px-6">
+    <div class="max-w-5xl mx-auto">
+      <div class="max-w-xl mb-10">
+        <h2 class="font-display text-3xl font-semibold tracking-tight">Install with the tool you already use</h2>
+        <p class="text-[var(--text-mid)] mt-3 leading-relaxed">The setup script detects installed harnesses and configures each one — no per-harness config to hand-edit.</p>
+      </div>
+
+      <div class="glass-strong rounded-2xl overflow-hidden max-w-2xl">
+        <div class="flex border-b border-white/10 px-2" id="install-tabs">
+          <button class="install-tab active-tab px-4 py-3 text-[13.5px] font-mono" data-tab="npx">npx</button>
+          <button class="install-tab px-4 py-3 text-[13.5px] font-mono" data-tab="pnpm">pnpm dlx</button>
+          <button class="install-tab px-4 py-3 text-[13.5px] font-mono" data-tab="yarn">yarn dlx</button>
+          <button class="install-tab px-4 py-3 text-[13.5px] font-mono" data-tab="bunx">bunx</button>
+        </div>
+        <div class="px-5 py-5 flex items-center justify-between gap-3">
+          <code id="install-cmd" class="font-mono text-[14px] text-[var(--text-hi)]">npx ecc-universal@2.2.1 setup</code>
+          <button onclick="copyCmd(document.getElementById('install-cmd').textContent, this)" class="copy-btn shrink-0 p-2 rounded-md" aria-label="Copy install command">
+            <i data-lucide="copy" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ================= FOOTER ================= -->
+<footer class="border-t border-white/10 px-6 py-14 mt-8">
+  <div class="max-w-5xl mx-auto">
+    <div class="grid sm:grid-cols-3 gap-8 mb-10">
+      <div>
+        <h4 class="font-display text-[14px] font-medium mb-3">Guides</h4>
+        <ul class="space-y-2 text-[13.5px] text-[var(--text-mid)]">
+          <li><a href="https://github.com/affaan-m/ECC" class="hover:text-[var(--text-hi)] transition-colors">The shorthand guide</a></li>
+          <li><a href="https://github.com/affaan-m/ECC" class="hover:text-[var(--text-hi)] transition-colors">The longform guide</a></li>
+          <li><a href="https://github.com/affaan-m/ECC" class="hover:text-[var(--text-hi)] transition-colors">The security guide</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-display text-[14px] font-medium mb-3">Project</h4>
+        <ul class="space-y-2 text-[13.5px] text-[var(--text-mid)]">
+          <li><a href="https://github.com/affaan-m/ECC" class="hover:text-[var(--text-hi)] transition-colors">GitHub repository</a></li>
+          <li><a href="https://ecc.tools" class="hover:text-[var(--text-hi)] transition-colors">ecc.tools</a></li>
+          <li><a href="https://discord.gg/36yGMHGFbR" class="hover:text-[var(--text-hi)] transition-colors">Discord community</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-display text-[14px] font-medium mb-3">Security</h4>
+        <ul class="space-y-2 text-[13.5px] text-[var(--text-mid)]">
+          <li class="flex items-center gap-2"><code class="font-mono text-[12px]" style="color: var(--emerald);">npx ecc-agentshield scan --path .</code></li>
+        </ul>
+      </div>
+    </div>
+    <div class="divider mb-6"></div>
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-[12.5px] text-[var(--text-low)]">
+      <span>MIT License · Everything Claude Code</span>
+      <a href="https://github.com/affaan-m/ECC" class="flex items-center gap-1.5 hover:text-[var(--text-hi)] transition-colors">
+        <i data-lucide="github" class="w-3.5 h-3.5"></i> affaan-m/ECC
+      </a>
+    </div>
+  </div>
+</footer>
+
+<!-- Toast -->
+<div id="toast" class="toast fixed bottom-6 left-1/2 -translate-x-1/2 z-50 glass-strong px-4 py-2.5 rounded-lg flex items-center gap-2 text-[13.5px]">
+  <i data-lucide="check" class="w-4 h-4" style="color: var(--emerald)"></i>
+  <span>Copied to clipboard</span>
+</div>
+
+<script>
+lucide.createIcons();
+
+/* ---------- copy to clipboard ---------- */
+function copyCmd(text, btn){
+  navigator.clipboard.writeText(text).then(()=>{
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(()=> toast.classList.remove('show'), 1800);
+  });
+}
+
+/* ---------- fake star count (static, no network) ---------- */
+document.getElementById('star-count').textContent = '4.2k';
+
+/* ---------- loop visualizer ---------- */
+const loopSteps = [
+  { key:'plan', label:'Plan', icon:'compass',
+    agents:['planner','architect'], skills:['/plan'],
+    desc:'The planner and architect subagents scope the change, surface open questions, and produce a plan before any file is touched.' },
+  { key:'test', label:'Test', icon:'flask-conical',
+    agents:['tdd-guide'], skills:['/tdd', 'e2e-testing'],
+    desc:'tdd-guide writes the failing test first, using the e2e-testing skill set when the change touches user-facing flows.' },
+  { key:'implement', label:'Implement', icon:'code-2',
+    agents:['implementer'], skills:['api-design'],
+    desc:'The implementer subagent writes the minimum code to pass the test, pulling in api-design conventions where relevant.' },
+  { key:'review', label:'Review', icon:'eye',
+    agents:['code-reviewer'], skills:['style-guide'],
+    desc:'code-reviewer re-reads the diff from a fresh context window, so review is never done by the same context that wrote the code.' },
+  { key:'verify', label:'Verify', icon:'check-circle-2',
+    agents:['security-reviewer','build-error-resolver'], skills:['security-scan'],
+    desc:'security-reviewer runs the security-scan skill; build-error-resolver clears any compilation or lint failures before merge.' },
+  { key:'remember', label:'Remember', icon:'database',
+    agents:['loop-operator'], skills:['memory-vault'],
+    desc:'loop-operator writes the decision and its rationale into the memory-vault skill, so the next session starts with context.' },
+  { key:'improve', label:'Improve', icon:'trending-up',
+    agents:['harness-optimizer'], skills:['context-budgeting'],
+    desc:'harness-optimizer looks at what slowed the loop down this time and tunes prompts, budgets, and routing for the next run.' },
+];
+
+const track = document.getElementById('loop-track');
+loopSteps.forEach((step, i)=>{
+  const wrap = document.createElement('button');
+  wrap.className = 'flex flex-col items-center gap-2.5 relative bg-transparent border-0';
+  wrap.setAttribute('data-key', step.key);
+  wrap.innerHTML = `
+    <span class="loop-node flex items-center justify-center" data-node="${step.key}">
+      <i data-lucide="${step.icon}" class="w-5 h-5 pointer-events-none"></i>
+    </span>
+    <span class="loop-label text-[12.5px] font-medium" data-label="${step.key}">${step.label}</span>
+  `;
+  wrap.addEventListener('click', ()=> selectLoopStep(step.key));
+  track.appendChild(wrap);
+});
+lucide.createIcons();
+
+function selectLoopStep(key){
+  loopSteps.forEach(s=>{
+    const node = document.querySelector(`[data-node="${s.key}"]`);
+    const label = document.querySelector(`[data-label="${s.key}"]`);
+    if(s.key === key){ node.classList.add('active'); label.classList.add('active'); }
+    else{ node.classList.remove('active'); label.classList.remove('active'); }
+  });
+  const step = loopSteps.find(s=>s.key===key);
+  const detail = document.getElementById('loop-detail');
+  detail.innerHTML = `
+    <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+      <div class="flex items-center gap-2 flex-wrap">
+        ${step.agents.map(a=>`<span class="tag-pill px-2.5 py-1 rounded-md text-[12.5px] font-mono" style="border-color: rgba(139,92,246,0.35); color:#C4B5FD;">${a}</span>`).join('')}
+        ${step.skills.map(s=>`<span class="tag-pill px-2.5 py-1 rounded-md text-[12.5px] font-mono" style="border-color: rgba(6,182,212,0.35); color:#67E8F9;">${s}</span>`).join('')}
+      </div>
+    </div>
+    <p class="text-[var(--text-mid)] text-[14.5px] leading-relaxed mt-3.5">${step.desc}</p>
+  `;
+}
+selectLoopStep('plan');
+
+/* ---------- component search ---------- */
+const components = [
+  {name:'planner', type:'subagent'}, {name:'architect', type:'subagent'},
+  {name:'tdd-guide', type:'subagent'}, {name:'code-reviewer', type:'subagent'},
+  {name:'security-reviewer', type:'subagent'}, {name:'build-error-resolver', type:'subagent'},
+  {name:'loop-operator', type:'subagent'}, {name:'harness-optimizer', type:'subagent'},
+  {name:'/plan', type:'command'}, {name:'/tdd', type:'command'}, {name:'/review', type:'command'},
+  {name:'/verify', type:'command'}, {name:'/memory', type:'command'},
+  {name:'security-scan', type:'skill'}, {name:'memory-vault', type:'skill'},
+  {name:'api-design', type:'skill'}, {name:'e2e-testing', type:'skill'}, {name:'ml-pipelines', type:'skill'},
+  {name:'AgentShield', type:'scanner'}, {name:'context-budgeting', type:'skill'},
+  {name:'style-guide', type:'skill'}, {name:'db-migration', type:'skill'}, {name:'ci-pipeline', type:'skill'},
+];
+
+const typeColor = { subagent:'#C4B5FD', skill:'#67E8F9', command:'#FDBA74', scanner:'#6EE7B7' };
+
+const grid = document.getElementById('component-grid');
+function renderComponents(filter=''){
+  grid.innerHTML = '';
+  const f = filter.trim().toLowerCase();
+  let shown = 0;
+  components.forEach(c=>{
+    const match = c.name.toLowerCase().includes(f) || c.type.toLowerCase().includes(f);
+    if(match) shown++;
+    const pill = document.createElement('span');
+    pill.className = 'tag-pill px-3 py-1.5 rounded-lg text-[13px] font-mono' + (match ? '' : ' hidden-item');
+    pill.style.color = typeColor[c.type];
+    pill.style.borderColor = typeColor[c.type] + '40';
+    pill.textContent = c.name;
+    grid.appendChild(pill);
+  });
+  document.getElementById('no-results').classList.toggle('hidden', shown !== 0);
+}
+renderComponents();
+document.getElementById('component-search').addEventListener('input', (e)=> renderComponents(e.target.value));
+
+/* ---------- harness matrix ---------- */
+const harnesses = [
+  {name:'Claude Code', tier:'Stable primary', color:'var(--emerald)', note:'Full feature set, first to receive updates.'},
+  {name:'Codex', tier:'Native plugin', color:'var(--emerald)', note:'Installs as a first-party plugin.'},
+  {name:'Cursor', tier:'Beta adapter', color:'var(--cyan)', note:'Core loop supported; some skills pending.'},
+  {name:'OpenCode', tier:'Beta adapter', color:'var(--cyan)', note:'Memory vault and scanner supported.'},
+  {name:'Kimi Code', tier:'Community adapter', color:'var(--purple)', note:'Maintained by community contributors.'},
+  {name:'Gemini CLI', tier:'Community adapter', color:'var(--purple)', note:'Subagent routing in progress.'},
+  {name:'Zed', tier:'Experimental', color:'#6B7590', note:'Setup script scaffolds config only.'},
+  {name:'Antigravity', tier:'Experimental', color:'#6B7590', note:'Setup script scaffolds config only.'},
+  {name:'Copilot', tier:'Experimental', color:'#6B7590', note:'Command shims only, no subagents yet.'},
+];
+
+const matrixBody = document.getElementById('matrix-body');
+harnesses.forEach(h=>{
+  const row = document.createElement('tr');
+  row.className = 'matrix-row border-b border-white/[0.05] last:border-0 transition-colors';
+  row.innerHTML = `
+    <td class="px-5 py-3.5 font-medium">${h.name}</td>
+    <td class="px-5 py-3.5">
+      <span class="inline-flex items-center gap-2">
+        <span class="status-dot" style="background:${h.color}"></span>
+        <span style="color:${h.color}" class="text-[13px]">${h.tier}</span>
+      </span>
+    </td>
+    <td class="px-5 py-3.5 text-[var(--text-low)] text-[13px] hidden sm:table-cell">${h.note}</td>
+  `;
+  matrixBody.appendChild(row);
+});
+
+/* ---------- install tabs ---------- */
+const installCmds = {
+  npx: 'npx ecc-universal@2.2.1 setup',
+  pnpm: 'pnpm dlx ecc-universal@2.2.1 setup',
+  yarn: 'yarn dlx ecc-universal@2.2.1 setup',
+  bunx: 'bunx ecc-universal@2.2.1 setup',
+};
+document.querySelectorAll('.install-tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.install-tab').forEach(t=>t.classList.remove('active-tab'));
+    tab.classList.add('active-tab');
+    document.getElementById('install-cmd').textContent = installCmds[tab.getAttribute('data-tab')];
+  });
+});
+</script>
+
+</body>
+</html>
